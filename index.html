@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>FundMe</title>
+    </head>
+    <body>
+        Hello!
+    </body>
+
+    <script type="module">
+        import { ethers } from "./ethers-5.6.esm.min.js"
+        import { abi, contractAddress } from "./constants.js"
+        const connectButton = document.getElementById("connectButton")
+        connectButton.onclick = connect
+        const fundButton = document.getElementById("fund")
+        fundButton.onclick = fund
+        const balance = document.getElementById("getBalance")
+        balance.onclick = getBalance
+        const withdrawFun = document.getElementById("withdraw")
+        withdrawFun.onclick = withdraw
+
+        async function connect() {
+            if (typeof window.ethereum != "undefined") {
+                console.log("i see a metamask")
+                await ethereum.request({ method: "eth_requestAccounts" })
+                console.log("connect!")
+            } else {
+                console.log("no metamask")
+            }
+        }
+
+        async function fund() {
+            const ethAmount = "1"
+            if (typeof window.ethereum != "undefined") {
+                const provider = new ethers.providers.Web3Provider(
+                    window.ethereum,
+                )
+                const signer = provider.getSigner()
+                console.log(signer)
+
+                const contract = new ethers.Contract(
+                    contractAddress,
+                    abi,
+                    signer,
+                )
+                try {
+                    const resp = await contract.fund({
+                        value: ethers.utils.parseEther(ethAmount),
+                    })
+                    await listen(resp, provider)
+                } catch (error) {
+                    console.log(error)
+                }
+            }
+        }
+
+        async function getBalance() {
+            if (typeof window.ethereum != "undefined") {
+                const provider = new ethers.providers.Web3Provider(
+                    window.ethereum,
+                )
+                const balanceNum = await provider.getBalance(contractAddress)
+                const formatBalance = ethers.utils.formatEther(balanceNum)
+                console.log(`balance is ${formatBalance}`)
+            }
+        }
+
+        async function withdraw() {
+            if (typeof window.ethereum != "undefined") {
+                const provider = new ethers.providers.Web3Provider(
+                    window.ethereum,
+                )
+                const signer = provider.getSigner()
+                console.log(signer)
+
+                const contract = new ethers.Contract(
+                    contractAddress,
+                    abi,
+                    signer,
+                )
+                try {
+                    const resp = await contract.withdraw()
+                    await listen(resp, provider)
+                } catch (error) {
+                    console.log(error)
+                }
+            }
+        }
+
+        function listen(resp, provider) {
+            console.log(`resp-hash ${resp.hash}`)
+            return new Promise((resolve, reject) => {
+                provider.once(resp.hash, (receive) => {
+                    console.log(`completed with ${receive.confirmations}`)
+                })
+                resolve()
+            })
+        }
+    </script>
+    <button id="connectButton">Connect</button>
+    <button id="fund">funb</button>
+    <button id="getBalance">getBalance</button>
+    <button id="withdraw">withdraw</button>
+</html>
